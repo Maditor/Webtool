@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Webtoon Studio — Cắt & Ghép Ảnh, Đổi Tên, Gắn Logo</title>
+<style>
+  :root{
+    --bg:#14161b;
+    --panel:#1b1e26;
+    --panel-2:#20232d;
+    --line:#2c303c;
+    --text:#e7e6e2;
+    --text-dim:#8b8fa3;
+    --accent:#e8a13d;
+    --accent-dim:#7a5a26;
+    --ok:#5fb98c;
+    --danger:#e2626b;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #24283a33, transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+  }
+
+  .toolbar{
+    display:flex;
+    align-items:center;
+    gap:2px;
+    padding:0 14px;
+    height:52px;
+    background:linear-gradient(180deg,#1a1c23,#161820);
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:20;
+  }
+  .brand{
+    display:flex; align-items:center; gap:9px;
+    padding-right:16px; margin-right:8px;
+    border-right:1px solid var(--line);
+    height:32px;
+  }
+  .brand .mark{
+    width:20px;height:20px;border-radius:5px;
+    background:linear-gradient(135deg,var(--accent),#c9781f);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:800;color:#1a1206;
+  }
+  .brand .name{font-size:13.5px;font-weight:700;letter-spacing:.2px;color:var(--text);}
+  .brand .name b{color:var(--accent);font-weight:800;}
+
+  .tool-tabs{display:flex;align-items:center;gap:2px;height:100%;overflow-x:auto;}
+  .tool-tab{
+    display:flex;align-items:center;gap:7px;
+    height:100%;
+    padding:0 14px;
+    font-size:12.5px;
+    color:var(--text-dim);
+    border-bottom:2px solid transparent;
+    cursor:pointer;
+    white-space:nowrap;
+    user-select:none;
+    transition:color .15s ease;
+  }
+  .tool-tab .dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.5;}
+  .tool-tab:hover{color:var(--text);}
+  .tool-tab.active{color:var(--text);border-bottom-color:var(--accent);}
+  .tool-tab.active .dot{background:var(--accent);opacity:1;}
+  .tool-tab.disabled{color:#565a68;cursor:not-allowed;}
+  .tool-tab .soon{
+    font-size:9px; padding:1px 6px; border-radius:100px;
+    border:1px solid #3a3e4c; color:#7d8296; letter-spacing:.4px;
+  }
+
+  .wrap{max-width:920px;margin:0 auto;padding:28px 20px 60px;}
+  .page-head{margin-bottom:20px;}
+  .page-head .eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:1.5px;
+    color:var(--accent); text-transform:uppercase; margin-bottom:6px;
+  }
+  .page-head h1{font-size:21px;margin:0 0 6px;font-weight:700;}
+  .page-head p{margin:0;color:var(--text-dim);font-size:13px;line-height:1.6;max-width:640px;}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px 20px 20px;
+    margin-bottom:16px;
+  }
+  .card h2{
+    font-size:12px; text-transform:uppercase; letter-spacing:1px;
+    color:var(--text-dim); margin:0 0 14px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .card h2::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  .row{display:flex; gap:14px; margin-bottom:14px;}
+  .row:last-child{margin-bottom:0;}
+  .field{flex:1; min-width:0;}
+  .field label{
+    display:block; font-size:11.5px; color:var(--text-dim);
+    margin-bottom:6px; letter-spacing:.2px;
+  }
+  .field label .hint{color:var(--danger); font-weight:600;}
+
+  .input-with-btn{display:flex; gap:8px;}
+  input[type=text], input[type=number], select{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-size:13px;
+    padding:9px 11px;
+    border-radius:7px;
+    font-family:var(--mono);
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  select{font-family:var(--sans);appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%238b8fa3'/></svg>");
+    background-repeat:no-repeat; background-position:right 12px center; padding-right:30px;
+  }
+  input:focus, select:focus{border-color:var(--accent);}
+  input[readonly]{color:var(--text-dim);}
+
+  button{
+    font-family:var(--sans); cursor:pointer; border:none; border-radius:7px;
+    font-size:12.5px; font-weight:600; letter-spacing:.2px;
+  }
+  .btn-browse{
+    background:#2a2e39; color:var(--text); padding:0 16px;
+    border:1px solid var(--line); white-space:nowrap;
+  }
+  .btn-browse:hover{background:#333846;}
+  .btn-primary{
+    background:linear-gradient(180deg,var(--accent),#c9781f);
+    color:#1a1206; padding:11px 22px; font-size:13px;
+  }
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-primary:disabled{opacity:.4; cursor:not-allowed; filter:none;}
+  .btn-secondary{
+    background:transparent; border:1px solid var(--line); color:var(--text-dim);
+    padding:11px 16px;
+  }
+  .btn-secondary:hover{color:var(--text); border-color:#454a5a;}
+
+  .adv-toggle{
+    font-size:11.5px; color:var(--text-dim); cursor:pointer; user-select:none;
+    display:flex; align-items:center; gap:6px; margin-top:2px;
+  }
+  .adv-toggle:hover{color:var(--text);}
+  .adv-toggle .chev{transition:transform .15s ease; font-size:9px;}
+  .adv-toggle.open .chev{transform:rotate(90deg);}
+  .adv-body{display:none; margin-top:14px; padding-top:14px; border-top:1px dashed var(--line);}
+  .adv-body.show{display:block;}
+  .field .desc{font-size:11px;color:#666b7d;margin-top:6px;line-height:1.5;}
+
+  .status-row{display:flex; gap:12px; align-items:stretch;}
+  .status-box{
+    flex:1; background:var(--panel-2); border:1px solid var(--line);
+    border-radius:7px; padding:10px 13px; font-family:var(--mono);
+    font-size:12.5px; color:var(--text-dim); display:flex; align-items:center;
+    min-width:0;
+  }
+  .status-box.busy{color:var(--accent);}
+  .status-box.done{color:var(--ok);}
+  .status-box.err{color:var(--danger);}
+  .progress-shell{
+    margin-top:12px; height:8px; border-radius:100px; background:var(--panel-2);
+    border:1px solid var(--line); overflow:hidden;
+  }
+  .progress-fill{
+    height:100%; width:0%; border-radius:100px;
+    background:linear-gradient(90deg,var(--accent-dim),var(--accent));
+    transition:width .2s ease;
+  }
+  .progress-label{
+    display:flex; justify-content:space-between; margin-top:7px;
+    font-family:var(--mono); font-size:10.5px; color:var(--text-dim);
+  }
+
+  .log{
+    margin-top:14px; max-height:150px; overflow-y:auto;
+    background:#101218; border:1px solid var(--line); border-radius:7px;
+    padding:10px 12px; font-family:var(--mono); font-size:11px; line-height:1.8;
+    color:#8b8fa3; display:none;
+  }
+  .log.show{display:block;}
+  .log .l-ok{color:var(--ok);}
+  .log .l-warn{color:var(--accent);}
+  .log .l-err{color:var(--danger);}
+
+  .thumbs{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(74px,1fr));
+    gap:8px; margin-top:14px;
+  }
+  .thumb{
+    aspect-ratio:3/4; border-radius:6px; overflow:hidden;
+    border:1px solid var(--line); background:var(--panel-2);
+    position:relative;
+  }
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .thumb .n{
+    position:absolute; bottom:0; left:0; right:0;
+    background:linear-gradient(0deg,#000c,transparent);
+    font-family:var(--mono); font-size:9.5px; color:#fff;
+    padding:3px 5px;
+  }
+
+  .footer-note{
+    font-size:11px; color:#565a68; margin-top:18px; line-height:1.7;
+    display:flex; gap:8px;
+  }
+  .footer-note .ic{color:var(--accent);}
+
+  input[type=file]{display:none;}
+
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#2c303c;border-radius:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="brand">
+    <!-- Đã bỏ biểu tượng W, đổi tên thành WebTool với hai màu khác nhau -->
+    <span class="name">Web<b>Tool</b></span>
+  </div>
+  <div class="tool-tabs">
+    <div class="tool-tab active" data-module="cut"><span class="dot"></span>Cắt & Ghép Ảnh</div>
+    <div class="tool-tab" data-module="rename"><span class="dot"></span>Đổi Tên File</div>
+    <div class="tool-tab" data-module="logo"><span class="dot"></span>Gắn Logo</div>
+    <div class="tool-tab disabled"><span class="dot"></span>Tăng chất lượng ảnh<span class="soon">sắp có</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="page-head" id="pageHead">
+    <div class="eyebrow">Module 01 · Cắt & Ghép Ảnh</div>
+    <h1>Ghép toàn bộ chương, cắt lại theo chiều cao an toàn</h1>
+  </div>
+
+  <!-- CARD VÀO/RA DÙNG CHUNG -->
+  <div class="card">
+    <h2>Cài Đặt Vào / Ra</h2>
+    <div class="row">
+      <div class="field">
+        <label>Đường Dẫn Vào (thư mục chứa ảnh)</label>
+        <div class="input-with-btn">
+          <input type="text" id="inputPathDisplay" readonly placeholder="Chưa chọn thư mục...">
+          <button class="btn-browse" id="btnBrowseInput">Duyệt</button>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Đường Dẫn Ra</label>
+        <div class="input-with-btn">
+          <input type="text" id="outputPathDisplay" readonly placeholder="Chưa chọn thư mục xuất...">
+          <button class="btn-browse" id="btnBrowseOutput">Duyệt</button>
+        </div>
+        <div class="desc" id="outputModeNote"></div>
+      </div>
+    </div>
+    <input type="file" id="inputFolderFallback" webkitdirectory directory multiple>
+  </div>
+
+  <!-- CARD CẮT ẢNH -->
+  <div class="card" id="cutSettingsCard">
+    <h2>Cài Đặt Chung</h2>
+    <div class="row">
+      <div class="field">
+        <label>Định Dạng File Xuất</label>
+        <select id="outputType">
+          <option value="image/jpeg" selected>.jpg</option>
+          <option value="image/webp">.webp</option>
+          <option value="image/png">.png</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Chất Lượng Ảnh (Lossy) <span class="hint">[1-100%]</span></label>
+        <input type="number" id="quality" min="1" max="100" value="100">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Chiều Cao Xuất (gần đúng, px)</label>
+        <input type="number" id="roughHeight" min="500" step="100" value="13000">
+      </div>
+      <div class="field">
+        <label>Kiểu Ép Chiều Rộng</label>
+        <select id="widthMode">
+          <option value="none" selected>Không ép (giữ nguyên, canh trái)</option>
+          <option value="scale">Co giãn theo ảnh đầu tiên</option>
+          <option value="pad">Đệm nền trắng theo ảnh rộng nhất</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="adv-toggle" id="advToggle"><span class="chev">▸</span> Cài đặt nâng cao (vùng dò điểm cắt an toàn)</div>
+    <div class="adv-body" id="advBody">
+      <div class="row">
+        <div class="field">
+          <label>Vùng Dò Ban Đầu Quanh Mốc Cắt (px)</label>
+          <input type="number" id="searchWindow" min="30" step="10" value="1000">
+        </div>
+        <div class="field">
+          <label>Ngưỡng Nhạy Màu (0-40)</label>
+          <input type="number" id="sensitivity" min="0" max="60" step="1" value="5">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD ĐỔI TÊN -->
+  <div class="card" id="renameSettingsCard" style="display:none;">
+    <h2>Cài Đặt Đổi Tên</h2>
+    <div class="row">
+      <div class="field">
+        <label>Đánh số thứ tự</label>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12.5px;">
+            <input type="checkbox" id="renameSeqEnabled" checked> Bật
+          </label>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:11.5px;color:var(--text-dim);">Số chữ số:</span>
+            <input type="number" id="renamePadLength" min="1" max="6" value="3" style="width:70px;">
+          </div>
+        </div>
+        <div class="desc">Ví dụ: 3 → 001, 002, 003...</div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Phần mở rộng</label>
+        <select id="renameExtMode">
+          <option value="keep" selected>Giữ nguyên</option>
+          <option value="custom">Khác</option>
+        </select>
+      </div>
+      <div class="field" id="renameCustomExtField" style="display:none;">
+        <label>Đuôi mới (không dấu chấm)</label>
+        <input type="text" id="renameCustomExt" placeholder="vd: webp" value="">
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD GẮN LOGO -->
+  <div class="card" id="logoSettingsCard" style="display:none;">
+    <h2>Cài Đặt Logo</h2>
+    <div class="row">
+      <div class="field">
+        <label>File Logo</label>
+        <div class="input-with-btn">
+          <input type="text" id="logoPathDisplay" readonly placeholder="Chưa chọn file logo...">
+          <button class="btn-browse" id="btnBrowseLogo">Chọn</button>
+        </div>
+        <input type="file" id="logoFileInput" accept="image/*">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Chiều cao logo (px)</label>
+        <input type="number" id="logoHeight" min="10" step="1" value="50">
+      </div>
+      <div class="field">
+        <label>Độ nét (Opacity) <span class="hint">[0-100%]</span></label>
+        <input type="number" id="logoOpacity" min="0" max="100" value="100">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Vị trí ngang</label>
+        <select id="logoAlignH">
+          <option value="left" selected>Trái</option>
+          <option value="center">Giữa</option>
+          <option value="right">Phải</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Vị trí dọc</label>
+        <select id="logoAlignV">
+          <option value="top" selected>Trên</option>
+          <option value="center">Giữa</option>
+          <option value="bottom">Dưới</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Padding ngang (px)</label>
+        <input type="number" id="logoPadX" min="0" step="1" value="10">
+      </div>
+      <div class="field">
+        <label>Padding dọc (px)</label>
+        <input type="number" id="logoPadY" min="0" step="1" value="10">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Chất lượng ảnh xuất (nếu có lossy)</label>
+        <input type="number" id="logoQuality" min="1" max="100" value="92">
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS -->
+  <div class="card">
+    <h2>Trạng Thái Hiện Tại</h2>
+    <div class="status-row">
+      <div class="status-box" id="statusBox">Chờ lệnh…</div>
+      <button class="btn-primary" id="btnStart" disabled>Bắt Đầu Xử Lý</button>
+    </div>
+    <div class="progress-shell"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label"><span id="progressText">0%</span><span id="progressCount"></span></div>
+    <div class="log" id="log"></div>
+    <div class="thumbs" id="thumbs"></div>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const supportsFS = 'showDirectoryPicker' in window;
+  const isTauri = typeof window !== 'undefined' && !!window.__TAURI__;
+
+  // Elements
+  const els = {
+    inputPathDisplay: $('inputPathDisplay'),
+    outputPathDisplay: $('outputPathDisplay'),
+    btnBrowseInput: $('btnBrowseInput'),
+    btnBrowseOutput: $('btnBrowseOutput'),
+    inputFolderFallback: $('inputFolderFallback'),
+    outputType: $('outputType'),
+    quality: $('quality'),
+    roughHeight: $('roughHeight'),
+    widthMode: $('widthMode'),
+    searchWindow: $('searchWindow'),
+    sensitivity: $('sensitivity'),
+    statusBox: $('statusBox'),
+    btnStart: $('btnStart'),
+    progressFill: $('progressFill'),
+    progressText: $('progressText'),
+    progressCount: $('progressCount'),
+    log: $('log'),
+    thumbs: $('thumbs'),
+    outputModeNote: $('outputModeNote'),
+    advToggle: $('advToggle'),
+    advBody: $('advBody'),
+    cutSettingsCard: $('cutSettingsCard'),
+    renameSettingsCard: $('renameSettingsCard'),
+    logoSettingsCard: $('logoSettingsCard'),
+    renameSeqEnabled: $('renameSeqEnabled'),
+    renamePadLength: $('renamePadLength'),
+    renameExtMode: $('renameExtMode'),
+    renameCustomExtField: $('renameCustomExtField'),
+    renameCustomExt: $('renameCustomExt'),
+    pageHead: $('pageHead'),
+    logoPathDisplay: $('logoPathDisplay'),
+    btnBrowseLogo: $('btnBrowseLogo'),
+    logoFileInput: $('logoFileInput'),
+    logoHeight: $('logoHeight'),
+    logoOpacity: $('logoOpacity'),
+    logoAlignH: $('logoAlignH'),
+    logoAlignV: $('logoAlignV'),
+    logoPadX: $('logoPadX'),
+    logoPadY: $('logoPadY'),
+    logoQuality: $('logoQuality'),
+  };
+
+  let currentModule = 'cut';
+  let inputFiles = [];               // {name, file, path} path chỉ có khi Tauri
+  let inputDirHandle = null;
+  let inputDirPath = null;           // Tauri: tuyệt đối, web: tên thư mục
+  let outputDirHandle = null;
+  let outputDirPath = null;          // Tauri: tuyệt đối
+  let outputMode = isTauri ? null : (supportsFS ? null : 'zip');
+  let logoFile = null;
+
+  // ---- UI MODE ----
+  if (isTauri) {
+    els.outputModeNote.textContent = 'Đang chạy dưới dạng ứng dụng Tauri.';
+  } else {
+    els.outputModeNote.textContent = supportsFS
+      ? 'Trình duyệt hỗ trợ ghi trực tiếp vào thư mục.'
+      : 'Trình duyệt không hỗ trợ ghi trực tiếp — ảnh sẽ được tải về dạng .zip.';
+  }
+
+  els.advToggle.addEventListener('click', () => {
+    els.advToggle.classList.toggle('open');
+    els.advBody.classList.toggle('show');
+  });
+
+  // ---- Tab switching ----
+  const tabs = document.querySelectorAll('.tool-tab:not(.disabled)');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const module = tab.dataset.module;
+      if (!module) return;
+      switchModule(module);
+    });
+  });
+
+  function switchModule(module) {
+    currentModule = module;
+    tabs.forEach(t => t.classList.remove('active'));
+    const activeTab = document.querySelector(`.tool-tab[data-module="${module}"]`);
+    if (activeTab) activeTab.classList.add('active');
+
+    els.cutSettingsCard.style.display = module === 'cut' ? '' : 'none';
+    els.renameSettingsCard.style.display = module === 'rename' ? '' : 'none';
+    els.logoSettingsCard.style.display = module === 'logo' ? '' : 'none';
+
+    if (module === 'cut') {
+      els.pageHead.innerHTML = `<div class="eyebrow">Module 01 · Cắt & Ghép Ảnh</div><h1>Ghép toàn bộ chương, cắt lại theo chiều cao an toàn</h1>`;
+    } else if (module === 'rename') {
+      els.pageHead.innerHTML = `<div class="eyebrow">Module 02 · Đổi Tên File</div><h1>Đổi tên hàng loạt ảnh theo thứ tự</h1>`;
+    } else if (module === 'logo') {
+      els.pageHead.innerHTML = `<div class="eyebrow">Module 03 · Gắn Logo</div><h1>Thêm logo vào toàn bộ ảnh</h1>`;
+    }
+
+    els.thumbs.innerHTML = '';
+    els.log.innerHTML = '';
+    els.log.classList.remove('show');
+    setStatus('Chờ lệnh…');
+    updateStartEnabled();
+  }
+
+  // Logo file selection
+  els.btnBrowseLogo.addEventListener('click', () => els.logoFileInput.click());
+  els.logoFileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) {
+      logoFile = e.target.files[0];
+      els.logoPathDisplay.value = logoFile.name;
+      updateStartEnabled();
+    }
+  });
+
+  // Auto padding logo
+  function updateLogoPadding() {
+    const h = els.logoAlignH.value;
+    const v = els.logoAlignV.value;
+    els.logoPadX.value = (h === 'center') ? 0 : 10;
+    els.logoPadY.value = (v === 'center') ? 0 : 10;
+  }
+  els.logoAlignH.addEventListener('change', updateLogoPadding);
+  els.logoAlignV.addEventListener('change', updateLogoPadding);
+
+  // ---- Helpers ----
+  function log(msg, cls) {
+    const line = document.createElement('div');
+    if (cls) line.className = cls;
+    const t = new Date().toLocaleTimeString('vi-VN', {hour12:false});
+    line.textContent = `[${t}] ${msg}`;
+    els.log.appendChild(line);
+    els.log.classList.add('show');
+    els.log.scrollTop = els.log.scrollHeight;
+  }
+
+  function setStatus(text, kind) {
+    els.statusBox.textContent = text;
+    els.statusBox.className = 'status-box' + (kind ? ' ' + kind : '');
+  }
+
+  function setProgress(pct, countText) {
+    els.progressFill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    els.progressText.textContent = Math.round(pct) + '%';
+    els.progressCount.textContent = countText || '';
+  }
+
+  function naturalCompare(a, b) {
+    const re = /(\d+)|(\D+)/g;
+    const ax = a.match(re) || [], bx = b.match(re) || [];
+    const len = Math.max(ax.length, bx.length);
+    for (let i = 0; i < len; i++) {
+      const av = ax[i] || '', bv = bx[i] || '';
+      const an = parseInt(av, 10), bn = parseInt(bv, 10);
+      if (!isNaN(an) && !isNaN(bn)) {
+        if (an !== bn) return an - bn;
+      } else if (av !== bv) {
+        return av < bv ? -1 : 1;
+      }
+    }
+    return 0;
+  }
+
+  const IMG_RE = /\.(png|jpe?g|webp)$/i;
+
+  // ---- INPUT SELECTION ----
+  els.btnBrowseInput.addEventListener('click', async () => {
+    if (isTauri) {
+      if (!window.__TAURI__.dialog || !window.__TAURI__.fs || !window.__TAURI__.path) {
+        log('Thiếu plugin Tauri.', 'l-err');
+        return;
+      }
+      try {
+        const dir = await window.__TAURI__.dialog.open({ directory: true, multiple: false, title: 'Chọn thư mục ảnh' });
+        if (dir) {
+          inputDirPath = Array.isArray(dir) ? dir[0] : dir;
+          els.inputPathDisplay.value = inputDirPath.split(/[/\\]/).pop();
+          const entries = await window.__TAURI__.fs.readDir(inputDirPath);
+          const items = [];
+          for (const entry of entries) {
+            if (entry.kind === 'file' && IMG_RE.test(entry.name)) {
+              const fullPath = await window.__TAURI__.path.join(inputDirPath, entry.name);
+              // Load file content ngay
+              const data = await window.__TAURI__.fs.readFile(fullPath);
+              const ext = entry.name.split('.').pop().toLowerCase();
+              const mime = ext === 'jpg' ? 'image/jpeg' : (ext === 'webp' ? 'image/webp' : 'image/png');
+              const blob = new Blob([data], { type: mime });
+              const file = new File([blob], entry.name);
+              items.push({ name: entry.name, file, path: fullPath });
+            }
+          }
+          items.sort((a, b) => naturalCompare(a.name, b.name));
+          inputFiles = items;
+          afterInputLoaded();
+        }
+      } catch (e) {
+        log('Không chọn được thư mục: ' + e.message, 'l-err');
+      }
+    } else if (supportsFS) {
+      try {
+        inputDirHandle = await window.showDirectoryPicker();
+        inputDirPath = inputDirHandle.name; // tên thư mục
+        els.inputPathDisplay.value = inputDirHandle.name;
+        const items = [];
+        for await (const [name, handle] of inputDirHandle.entries()) {
+          if (handle.kind === 'file' && IMG_RE.test(name)) {
+            items.push({ name, file: await handle.getFile(), path: null });
+          }
+        }
+        items.sort((a, b) => naturalCompare(a.name, b.name));
+        inputFiles = items;
+        afterInputLoaded();
+      } catch (e) {
+        if (e.name !== 'AbortError') log('Không mở được thư mục: ' + e.message, 'l-err');
+      }
+    } else {
+      els.inputFolderFallback.click();
+    }
+  });
+
+  els.inputFolderFallback.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files).filter(f => IMG_RE.test(f.name));
+    files.sort((a, b) => naturalCompare(a.webkitRelativePath || a.name, b.webkitRelativePath || b.name));
+    inputFiles = files.map(f => ({ name: f.name, file: f, path: null }));
+    const folder = files[0] && files[0].webkitRelativePath ? files[0].webkitRelativePath.split('/')[0] : 'thư mục đã chọn';
+    inputDirPath = folder;
+    els.inputPathDisplay.value = folder;
+    afterInputLoaded();
+  });
+
+  function afterInputLoaded() {
+    log(`Đã nạp ${inputFiles.length} ảnh.`, 'l-ok');
+    updateStartEnabled();
+  }
+
+  // ---- OUTPUT SELECTION ----
+  els.btnBrowseOutput.addEventListener('click', async () => {
+    if (isTauri) {
+      try {
+        const dir = await window.__TAURI__.dialog.open({ directory: true, multiple: false, title: 'Chọn thư mục xuất' });
+        if (dir) {
+          outputDirPath = Array.isArray(dir) ? dir[0] : dir;
+          els.outputPathDisplay.value = outputDirPath;
+          outputMode = 'tauri';
+        }
+      } catch (e) {
+        log('Không chọn được thư mục xuất: ' + e.message, 'l-err');
+      }
+    } else if (supportsFS) {
+      try {
+        outputDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        els.outputPathDisplay.value = outputDirHandle.name;
+        outputMode = 'fsapi';
+      } catch (e) {
+        if (e.name !== 'AbortError') log('Không chọn được thư mục xuất: ' + e.message, 'l-err');
+      }
+    } else {
+      els.outputPathDisplay.value = '(sẽ tải về .zip)';
+      outputMode = 'zip';
+    }
+    updateStartEnabled();
+  });
+
+  function updateStartEnabled() {
+    const hasIn = inputFiles.length > 0;
+    let hasOut = true;
+    if (isTauri) {
+      if (currentModule === 'rename') {
+        // Cho phép không cần chọn output, sẽ đổi tên tại chỗ
+        hasOut = true;
+      } else {
+        hasOut = !!outputDirPath;
+      }
+    }
+    if (currentModule === 'logo' && !logoFile) {
+      els.btnStart.disabled = true;
+      return;
+    }
+    els.btnStart.disabled = !(hasIn && hasOut);
+
+    if (isTauri) {
+      if (currentModule === 'rename') {
+        els.outputModeNote.textContent = outputDirPath
+          ? `Sẽ lưu file đã đổi tên vào: ${outputDirPath}`
+          : 'Sẽ đổi tên trực tiếp trong thư mục nguồn.';
+      } else {
+        els.outputModeNote.textContent = outputDirPath
+          ? `Sẽ tạo thư mục con và lưu tại: ${outputDirPath}`
+          : 'Vui lòng chọn thư mục xuất.';
+      }
+    } else if (hasIn && supportsFS && !outputDirHandle) {
+      els.outputModeNote.textContent = 'Chưa chọn thư mục xuất — ảnh sẽ được tải về .zip.';
+    }
+  }
+
+  // ---- MAIN RUN ----
+  els.btnStart.addEventListener('click', async () => {
+    if (currentModule === 'cut') await runCut();
+    else if (currentModule === 'rename') await runRename();
+    else if (currentModule === 'logo') await runLogo();
+  });
+
+  // ==================== CUT MODULE ====================
+  async function runCut() {
+    els.btnStart.disabled = true;
+    els.thumbs.innerHTML = '';
+    els.log.innerHTML = '';
+    els.log.classList.remove('show');
+
+    const outputType = els.outputType.value;
+    const quality = Math.min(100, Math.max(1, parseInt(els.quality.value, 10) || 100)) / 100;
+    const roughHeight = Math.max(500, parseInt(els.roughHeight.value, 10) || 13000);
+    const widthMode = els.widthMode.value;
+    const searchWindow = Math.max(30, parseInt(els.searchWindow.value, 10) || 1000);
+    const sensitivity = Math.max(0, parseInt(els.sensitivity.value, 10) || 5);
+    const ext = outputType === 'image/jpeg' ? 'jpg' : outputType === 'image/webp' ? 'webp' : 'png';
+
+    try {
+      setStatus('Đang tải ảnh…', 'busy');
+      setProgress(0, `0 / ${inputFiles.length}`);
+      const layout = [];
+      let firstWidth = 0, maxWidth = 0;
+
+      for (let i = 0; i < inputFiles.length; i++) {
+        const bmp = await createImageBitmap(inputFiles[i].file);
+        if (i === 0) firstWidth = bmp.width;
+        maxWidth = Math.max(maxWidth, bmp.width);
+        layout.push({ name: inputFiles[i].name, bmp, srcW: bmp.width, srcH: bmp.height });
+        setProgress((i + 1) / inputFiles.length * 25, `${i + 1} / ${inputFiles.length} ảnh đã tải`);
+      }
+
+      const canvasWidth = widthMode === 'scale' ? firstWidth : maxWidth;
+
+      let cursor = 0;
+      for (const it of layout) {
+        if (widthMode === 'scale') {
+          it.drawW = canvasWidth;
+          it.drawH = Math.round(it.srcH * (canvasWidth / it.srcW));
+          it.offsetX = 0;
+        } else if (widthMode === 'pad') {
+          it.drawW = it.srcW;
+          it.drawH = it.srcH;
+          it.offsetX = Math.floor((canvasWidth - it.srcW) / 2);
+        } else {
+          it.drawW = it.srcW;
+          it.drawH = it.srcH;
+          it.offsetX = 0;
+        }
+        it.start = cursor;
+        it.end = cursor + it.drawH;
+        cursor = it.end;
+      }
+      const totalHeight = cursor;
+      log(`Đã ghép ${layout.length} ảnh, tổng chiều cao ${totalHeight}px, rộng ${canvasWidth}px.`);
+
+      function drawRegion(ctx, destY, y0, h) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, destY, canvasWidth, h);
+        const y1 = y0 + h;
+        for (const it of layout) {
+          if (it.end <= y0 || it.start >= y1) continue;
+          const overlapStart = Math.max(it.start, y0);
+          const overlapEnd = Math.min(it.end, y1);
+          const localStart = overlapStart - it.start;
+          const localH = overlapEnd - overlapStart;
+          const scaleY = it.srcH / it.drawH;
+          const srcY = localStart * scaleY;
+          const srcH = localH * scaleY;
+          const destYPix = destY + (overlapStart - y0);
+          ctx.drawImage(it.bmp, 0, srcY, it.srcW, srcH, it.offsetX, destYPix, it.drawW, localH);
+        }
+      }
+
+      function rowScore(data, width, row, channels) {
+        let score = 0;
+        const step = Math.max(1, Math.floor(width / 220));
+        let prevR = null, prevG = null, prevB = null;
+        let count = 0;
+        for (let x = 0; x < width; x += step) {
+          const idx = (row * width + x) * channels;
+          const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+          if (prevR !== null) score += Math.abs(r - prevR) + Math.abs(g - prevG) + Math.abs(b - prevB);
+          prevR = r; prevG = g; prevB = b;
+          count++;
+        }
+        return count > 1 ? score / (count - 1) : 999;
+      }
+
+      async function findSafeCut(idealY) {
+        let radius = searchWindow;
+        let scannedStart = null, scannedEnd = null;
+        let bestSafeRow = null, bestSafeDist = Infinity;
+        let bestAnyRow = Math.round(idealY), bestAnyScore = Infinity;
+
+        while (true) {
+          const winStart = Math.max(1, Math.floor(idealY - radius));
+          const winEnd = Math.min(totalHeight - 1, Math.ceil(idealY + radius));
+          const segments = [];
+          if (scannedStart === null) {
+            segments.push([winStart, winEnd]);
+          } else {
+            if (winStart < scannedStart) segments.push([winStart, scannedStart]);
+            if (winEnd > scannedEnd) segments.push([scannedEnd, winEnd]);
+          }
+
+          for (const [segStart, segEnd] of segments) {
+            const segH = segEnd - segStart;
+            if (segH < 1) continue;
+            const cvs = document.createElement('canvas');
+            cvs.width = canvasWidth;
+            cvs.height = segH;
+            const actx = cvs.getContext('2d', { willReadFrequently: true });
+            drawRegion(actx, 0, segStart, segH);
+            const imgData = actx.getImageData(0, 0, canvasWidth, segH).data;
+
+            for (let row = 0; row < segH; row++) {
+              const absY = segStart + row;
+              const s = rowScore(imgData, canvasWidth, row, 4);
+              const dist = Math.abs(absY - idealY);
+              if (s <= sensitivity && dist < bestSafeDist) {
+                bestSafeDist = dist;
+                bestSafeRow = absY;
+              }
+              const total = s + dist * 0.01;
+              if (total < bestAnyScore) {
+                bestAnyScore = total;
+                bestAnyRow = absY;
+              }
+            }
+          }
+
+          scannedStart = winStart;
+          scannedEnd = winEnd;
+          if (bestSafeRow !== null) return bestSafeRow;
+
+          if (winStart <= 1 && winEnd >= totalHeight - 1) {
+            log(`Không tìm thấy dòng cắt an toàn tuyệt đối, dùng dòng tốt nhất.`, 'l-warn');
+            return bestAnyRow;
+          }
+          radius *= 2;
+        }
+      }
+
+      setStatus('Đang dò điểm cắt an toàn…', 'busy');
+      const boundaries = [0];
+      let pos = 0;
+      let guard = 0;
+      while (totalHeight - pos > roughHeight * 1.5 && guard < 5000) {
+        guard++;
+        const ideal = pos + roughHeight;
+        const cut = await findSafeCut(ideal);
+        boundaries.push(cut);
+        pos = cut;
+        setProgress(25 + (pos / totalHeight) * 25, `dò: ${Math.round(pos)}/${totalHeight}px`);
+      }
+      boundaries.push(totalHeight);
+      const sliceCount = boundaries.length - 1;
+      log(`Sẽ xuất ${sliceCount} ảnh.`, 'l-ok');
+
+      // Tạo thư mục con nếu Tauri
+      let finalOutputDir = outputDirPath;
+      if (isTauri && outputDirPath) {
+        const srcName = inputDirPath ? inputDirPath.split(/[/\\]/).pop() : 'images';
+        const subDir = `${srcName} (đã ghép)`;
+        finalOutputDir = await window.__TAURI__.path.join(outputDirPath, subDir);
+        await window.__TAURI__.fs.createDir(finalOutputDir, { recursive: true });
+        log(`Đã tạo thư mục: ${finalOutputDir}`, 'l-ok');
+      }
+
+      const mode = isTauri ? 'tauri' : (outputMode || 'zip');
+      const padWidth = Math.max(3, String(sliceCount).length);
+      let zip = null;
+      if (mode === 'zip') {
+        await ensureJSZip();
+        zip = new JSZip();
+      }
+
+      setStatus('Đang xuất ảnh…', 'busy');
+      for (let i = 0; i < sliceCount; i++) {
+        const y0 = boundaries[i], y1 = boundaries[i + 1];
+        const h = y1 - y0;
+        const c = document.createElement('canvas');
+        c.width = canvasWidth;
+        c.height = h;
+        const ctx = c.getContext('2d');
+        drawRegion(ctx, 0, y0, h);
+
+        const blob = await new Promise(res => c.toBlob(res, outputType, quality));
+        const fname = `${String(i + 1).padStart(padWidth, '0')}.${ext}`;
+
+        if (mode === 'tauri') {
+          const fullPath = await window.__TAURI__.path.join(finalOutputDir, fname);
+          const buf = new Uint8Array(await blob.arrayBuffer());
+          await window.__TAURI__.fs.writeFile(fullPath, buf);
+        } else if (mode === 'fsapi') {
+          const fh = await outputDirHandle.getFileHandle(fname, { create: true });
+          const w = await fh.createWritable();
+          await w.write(blob);
+          await w.close();
+        } else {
+          zip.file(fname, blob);
+        }
+
+        if (i < 24) {
+          const url = URL.createObjectURL(blob);
+          const t = document.createElement('div');
+          t.className = 'thumb';
+          t.innerHTML = `<img src="${url}"><div class="n">${fname} · ${h}px</div>`;
+          els.thumbs.appendChild(t);
+        }
+
+        setProgress(50 + ((i + 1) / sliceCount) * 50, `${i + 1} / ${sliceCount} ảnh`);
+        log(`Xuất ${fname} (cao ${h}px)`, 'l-ok');
+      }
+
+      if (mode === 'zip') {
+        setStatus('Đang đóng gói .zip…', 'busy');
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'webtoon_output.zip';
+        a.click();
+        log('Đã tải file webtoon_output.zip', 'l-ok');
+      }
+
+      setProgress(100, `${sliceCount} / ${sliceCount} ảnh`);
+      setStatus(`Hoàn tất — ${sliceCount} ảnh đã xuất.`, 'done');
+    } catch (err) {
+      console.error(err);
+      setStatus('Lỗi: ' + err.message, 'err');
+      log('Lỗi: ' + err.message, 'l-err');
+    } finally {
+      els.btnStart.disabled = false;
+    }
+  }
+
+  // ==================== RENAME MODULE ====================
+  async function runRename() {
+    els.btnStart.disabled = true;
+    els.thumbs.innerHTML = '';
+    els.log.innerHTML = '';
+    els.log.classList.remove('show');
+
+    const seqEnabled = els.renameSeqEnabled.checked;
+    let padLength = parseInt(els.renamePadLength.value, 10);
+    if (isNaN(padLength) || padLength < 1) padLength = 1;
+    if (padLength > 10) padLength = 10;
+
+    const extMode = els.renameExtMode.value;
+    let customExt = '';
+    if (extMode === 'custom') {
+      customExt = els.renameCustomExt.value.trim().replace(/^\.+/, '');
+      if (!customExt) {
+        setStatus('Vui lòng nhập đuôi mở rộng.', 'err');
+        els.btnStart.disabled = false;
+        return;
+      }
+    }
+
+    try {
+      setStatus('Đang đổi tên…', 'busy');
+      setProgress(0, `0 / ${inputFiles.length}`);
+
+      const mode = isTauri ? 'tauri' : (outputMode || 'zip');
+      let zip = null;
+      if (mode === 'zip') {
+        await ensureJSZip();
+        zip = new JSZip();
+      }
+
+      let targetDir = outputDirPath;
+      let doRenameInPlace = false;
+      if (isTauri && !targetDir) {
+        targetDir = inputDirPath;
+        doRenameInPlace = true;
+      }
+
+      for (let i = 0; i < inputFiles.length; i++) {
+        const item = inputFiles[i];
+        const originalName = item.name;
+        const lastDot = originalName.lastIndexOf('.');
+        let origBase = originalName;
+        let origExt = '';
+        if (lastDot >= 0) {
+          origBase = originalName.substring(0, lastDot);
+          origExt = originalName.substring(lastDot + 1);
+        }
+
+        let newName = seqEnabled ? (i + 1).toString().padStart(padLength, '0') : origBase;
+        let newExt = extMode === 'keep' ? origExt : customExt;
+        const fname = newExt ? `${newName}.${newExt}` : newName;
+
+        if (isTauri) {
+          const oldPath = item.path;
+          const newPath = await window.__TAURI__.path.join(targetDir, fname);
+          if (doRenameInPlace) {
+            await window.__TAURI__.fs.rename(oldPath, newPath);
+            log(`Đã đổi tên: ${originalName} → ${fname}`, 'l-ok');
+          } else {
+            const data = await window.__TAURI__.fs.readFile(oldPath);
+            await window.__TAURI__.fs.writeFile(newPath, data);
+            log(`Đã copy và đổi tên: ${originalName} → ${fname}`, 'l-ok');
+          }
+        } else if (mode === 'fsapi') {
+          const fh = await outputDirHandle.getFileHandle(fname, { create: true });
+          const w = await fh.createWritable();
+          await w.write(item.file);
+          await w.close();
+        } else {
+          zip.file(fname, item.file);
+        }
+
+        if (i < 24 && item.file) {
+          const url = URL.createObjectURL(item.file);
+          const t = document.createElement('div');
+          t.className = 'thumb';
+          t.innerHTML = `<img src="${url}"><div class="n">${fname}</div>`;
+          els.thumbs.appendChild(t);
+        }
+
+        setProgress(((i + 1) / inputFiles.length) * 100, `${i + 1} / ${inputFiles.length}`);
+      }
+
+      if (mode === 'zip') {
+        setStatus('Đang đóng gói .zip…', 'busy');
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'renamed_files.zip';
+        a.click();
+        log('Đã tải file renamed_files.zip', 'l-ok');
+      }
+
+      setProgress(100, `${inputFiles.length} / ${inputFiles.length}`);
+      setStatus(`Hoàn tất — ${inputFiles.length} file đã được đổi tên.`, 'done');
+    } catch (err) {
+      console.error(err);
+      setStatus('Lỗi: ' + err.message, 'err');
+      log('Lỗi: ' + err.message, 'l-err');
+    } finally {
+      els.btnStart.disabled = false;
+    }
+  }
+
+  // ==================== LOGO MODULE ====================
+  async function runLogo() {
+    els.btnStart.disabled = true;
+    els.thumbs.innerHTML = '';
+    els.log.innerHTML = '';
+    els.log.classList.remove('show');
+
+    if (!logoFile) {
+      setStatus('Chưa chọn file logo.', 'err');
+      els.btnStart.disabled = false;
+      return;
+    }
+
+    const logoHeightTarget = Math.max(10, parseInt(els.logoHeight.value, 10) || 50);
+    const opacity = Math.min(100, Math.max(0, parseInt(els.logoOpacity.value, 10) || 100)) / 100;
+    const alignH = els.logoAlignH.value;
+    const alignV = els.logoAlignV.value;
+    const padX = Math.max(0, parseInt(els.logoPadX.value, 10) || 0);
+    const padY = Math.max(0, parseInt(els.logoPadY.value, 10) || 0);
+    const quality = Math.min(100, Math.max(1, parseInt(els.logoQuality.value, 10) || 92)) / 100;
+
+    try {
+      setStatus('Đang tải logo…', 'busy');
+      const logoBmp = await createImageBitmap(logoFile);
+      const logoRatio = logoBmp.width / logoBmp.height;
+      const drawLogoH = logoHeightTarget;
+      const drawLogoW = Math.round(drawLogoH * logoRatio);
+
+      // Tạo thư mục con nếu Tauri
+      let finalOutputDir = outputDirPath;
+      if (isTauri && outputDirPath) {
+        const srcName = inputDirPath ? inputDirPath.split(/[/\\]/).pop() : 'images';
+        const subDir = `${srcName} (đã gắn logo)`;
+        finalOutputDir = await window.__TAURI__.path.join(outputDirPath, subDir);
+        await window.__TAURI__.fs.createDir(finalOutputDir, { recursive: true });
+        log(`Đã tạo thư mục: ${finalOutputDir}`, 'l-ok');
+      }
+
+      const mode = isTauri ? 'tauri' : (outputMode || 'zip');
+      let zip = null;
+      if (mode === 'zip') {
+        await ensureJSZip();
+        zip = new JSZip();
+      }
+
+      const padWidth = Math.max(3, String(inputFiles.length).length);
+
+      for (let i = 0; i < inputFiles.length; i++) {
+        const item = inputFiles[i];
+        const bmp = await createImageBitmap(item.file);
+        const canvas = document.createElement('canvas');
+        canvas.width = bmp.width;
+        canvas.height = bmp.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bmp, 0, 0);
+
+        let logoX, logoY;
+        if (alignH === 'left') logoX = padX;
+        else if (alignH === 'center') logoX = (canvas.width - drawLogoW) / 2;
+        else logoX = canvas.width - drawLogoW - padX;
+
+        if (alignV === 'top') logoY = padY;
+        else if (alignV === 'center') logoY = (canvas.height - drawLogoH) / 2;
+        else logoY = canvas.height - drawLogoH - padY;
+
+        ctx.globalAlpha = opacity;
+        ctx.drawImage(logoBmp, logoX, logoY, drawLogoW, drawLogoH);
+        ctx.globalAlpha = 1.0;
+
+        const origExt = item.name.split('.').pop().toLowerCase();
+        const mime = origExt === 'jpg' ? 'image/jpeg' : (origExt === 'webp' ? 'image/webp' : 'image/png');
+        const blob = await new Promise(res => canvas.toBlob(res, mime, quality));
+        const fname = `${String(i + 1).padStart(padWidth, '0')}.${origExt}`;
+
+        if (mode === 'tauri') {
+          const fullPath = await window.__TAURI__.path.join(finalOutputDir, fname);
+          const buf = new Uint8Array(await blob.arrayBuffer());
+          await window.__TAURI__.fs.writeFile(fullPath, buf);
+        } else if (mode === 'fsapi') {
+          const fh = await outputDirHandle.getFileHandle(fname, { create: true });
+          const w = await fh.createWritable();
+          await w.write(blob);
+          await w.close();
+        } else {
+          zip.file(fname, blob);
+        }
+
+        if (i < 24) {
+          const url = URL.createObjectURL(blob);
+          const t = document.createElement('div');
+          t.className = 'thumb';
+          t.innerHTML = `<img src="${url}"><div class="n">${fname}</div>`;
+          els.thumbs.appendChild(t);
+        }
+
+        setProgress(((i + 1) / inputFiles.length) * 100, `${i + 1} / ${inputFiles.length}`);
+        log(`Đã gắn logo: ${item.name} → ${fname}`, 'l-ok');
+      }
+
+      if (mode === 'zip') {
+        setStatus('Đang đóng gói .zip…', 'busy');
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'logo_output.zip';
+        a.click();
+        log('Đã tải file logo_output.zip', 'l-ok');
+      }
+
+      setProgress(100, `${inputFiles.length} / ${inputFiles.length}`);
+      setStatus(`Hoàn tất — đã gắn logo vào ${inputFiles.length} ảnh.`, 'done');
+    } catch (err) {
+      console.error(err);
+      setStatus('Lỗi: ' + err.message, 'err');
+      log('Lỗi: ' + err.message, 'l-err');
+    } finally {
+      els.btnStart.disabled = false;
+    }
+  }
+
+  // JSZip loader
+  let jszipLoading = null;
+  function ensureJSZip() {
+    if (window.JSZip) return Promise.resolve();
+    if (jszipLoading) return jszipLoading;
+    jszipLoading = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      s.onload = resolve;
+      s.onerror = () => reject(new Error('Không tải được thư viện nén zip.'));
+      document.head.appendChild(s);
+    });
+    return jszipLoading;
+  }
+
+  // Khởi động
+  switchModule('cut');
+  updateStartEnabled();
+})();
+</script>
+
+</body>
+</html>
