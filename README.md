@@ -3,7 +3,7 @@
 Công cụ xử lý ảnh chạy hoàn toàn phía client (không cần server), dùng để hỗ trợ dựng webtoon/truyện tranh: ghép — cắt lại ảnh theo chiều cao, đổi tên file hàng loạt, và gắn logo lên toàn bộ ảnh.
 
 Chạy được ở 2 dạng:
-- **Trên trình duyệt**: mở 'https://maditor.github.io/Webtool/'
+- **Trên trình duyệt**: mở 'https://maditor.github.io/WebTool/'
 - **Portable**: chạy như app desktop, thao tác trực tiếp với thư mục trên máy.
 
 ## Các chức năng
